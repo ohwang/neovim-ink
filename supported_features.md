@@ -40,7 +40,7 @@ Toggle legend: `[x]` = verified working, `[ ]` = not implemented, `[~]` = partia
 ### Special Input
 - [x] Special char escaping (`<lt>`, `<Bslash>`, `<Bar>`)
 - [~] Unicode / multibyte characters (passthrough, no IME)
-- [ ] Bracketed paste mode (large pastes are slow, char-by-char)
+- [x] Paste detection (multi-char input routed to `nvim_paste()` API)
 - [ ] Mouse click / drag / scroll
 - [ ] Dead keys / compose sequences
 - [ ] IME (Input Method Editor)
@@ -201,12 +201,12 @@ Toggle legend: `[x]` = verified working, `[ ]` = not implemented, `[~]` = partia
 - [x] Search (/)
 - [x] Resize (nvim_ui_try_resize)
 - [x] Resize with chrome row adjustment
+- [x] Paste via nvim_paste (insert mode, normal mode, multiline, special chars, empty, large block)
 
 ### Not Tested
 - [ ] Function keys
 - [ ] Mouse input
 - [ ] Large file performance
-- [ ] Paste (bracketed paste mode)
 - [ ] Wide characters in integration tests
 - [ ] Floating window events (not implemented)
 - [ ] Concurrent resize + input

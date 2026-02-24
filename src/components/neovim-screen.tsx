@@ -8,15 +8,17 @@ import type { ModeInfo } from "../screen/types.js";
 interface Props {
   screen: ScreenBuffer;
   sendInput: (keys: string) => void;
+  paste: (text: string) => void;
   frameCount: number;
 }
 
 export function NeovimScreen({
   screen,
   sendInput,
+  paste,
   frameCount,
 }: Props) {
-  useRawInput(sendInput, true);
+  useRawInput(sendInput, paste, true);
 
   // Determine current cursor shape from mode info
   const modeInfo: ModeInfo | undefined =

@@ -11,6 +11,7 @@ export interface UseNeovimResult {
   screen: ScreenBuffer;
   client: NeovimClient | null;
   sendInput: (keys: string) => void;
+  paste: (text: string) => void;
   resize: (w: number, h: number) => void;
   frameCount: number;
 }
@@ -84,6 +85,20 @@ export function useNeovim(
     clientRef.current?.input(keys);
   }, []);
 
+  const paste = useCallback((text: string) => {
+    log("paste", `pasting ${text.length} chars`);
+    // nvim_paste handles bracketed paste semantics: it respects paste mode,
+    // avoids triggering mappings, and is much faster than sending chars
+    // one-by-one via client.input().
+    clientRef.current
+      ?.request("nvim_paste", [text, true, -1])
+      .catch((err: unknown) => {
+        log("paste", `nvim_paste failed, falling back to input: ${err}`);
+        // Fallback: send as raw input if nvim_paste fails
+        clientRef.current?.input(text);
+      });
+  }, []);
+
   const resize = useCallback((w: number, h: number) => {
     log("resize", `useNeovim.resize(${w}, ${h})`);
     // Only tell Neovim the new size. Neovim will send a grid_resize event
@@ -99,6 +114,7 @@ export function useNeovim(
     screen: screenRef.current,
     client: clientRef.current,
     sendInput,
+    paste,
     resize,
     frameCount,
   };

@@ -349,4 +349,101 @@ describe("Neovim integration", () => {
     expect(screen.height).toBe(24);
     expect(rowText(screen, 0)).toContain("Line 1");
   });
+
+  // -----------------------------------------------------------------------
+  // nvim_paste tests
+  // -----------------------------------------------------------------------
+
+  it("nvim_paste inserts text in insert mode", async () => {
+    // Clear buffer and enter insert mode
+    await client.input("<Esc>ggdGi");
+    await waitForFlush();
+
+    // Paste via nvim_paste API (phase -1 = single-shot paste)
+    await client.request("nvim_paste", ["Hello from paste!", true, -1]);
+    await waitForFlush();
+
+    expect(rowText(screen, 0)).toBe("Hello from paste!");
+    expect(screen.cursor.col).toBe(17);
+  });
+
+  it("nvim_paste inserts multiline text", async () => {
+    await client.input("<Esc>ggdGi");
+    await waitForFlush();
+
+    await client.request("nvim_paste", ["line one\nline two\nline three", true, -1]);
+    await waitForFlush();
+
+    expect(rowText(screen, 0)).toBe("line one");
+    expect(rowText(screen, 1)).toBe("line two");
+    expect(rowText(screen, 2)).toBe("line three");
+  });
+
+  it("nvim_paste in normal mode inserts text at cursor", async () => {
+    await client.input("<Esc>ggdG");
+    await waitForFlush();
+
+    // Type some text first, go back to normal mode, cursor on first char
+    await client.input("iexisting");
+    await waitForFlush();
+    await client.input("<Esc>0");
+    await waitForFlush();
+
+    // Paste in normal mode — nvim_paste inserts at cursor position,
+    // splitting the existing text around the cursor.
+    await client.request("nvim_paste", ["PASTED ", true, -1]);
+    await waitForFlush();
+
+    const row = rowText(screen, 0);
+    expect(row).toContain("PASTED");
+    // The existing text is split: "e" before cursor + "xisting" after paste
+    expect(row).toContain("xisting");
+  });
+
+  it("nvim_paste handles special characters without triggering mappings", async () => {
+    await client.input("<Esc>ggdGi");
+    await waitForFlush();
+
+    // Paste text that contains characters which would be mappings if typed
+    // e.g. "jk" is a common escape mapping, "<CR>" is literal text not enter
+    await client.request("nvim_paste", ["jk is not escape, <CR> is literal", true, -1]);
+    await waitForFlush();
+
+    expect(rowText(screen, 0)).toBe("jk is not escape, <CR> is literal");
+  });
+
+  it("nvim_paste handles empty string gracefully", async () => {
+    await client.input("<Esc>ggdGibase text");
+    await waitForFlush();
+
+    const before = rowText(screen, 0);
+    await client.request("nvim_paste", ["", true, -1]);
+    await waitForFlush();
+
+    expect(rowText(screen, 0)).toBe(before);
+  });
+
+  it("nvim_paste handles large text block", async () => {
+    await client.input("<Esc>ggdGi");
+    await waitForFlush();
+
+    // Generate a block of 50 lines
+    const lines = Array.from({ length: 50 }, (_, i) => `Line ${i + 1}: some content here`);
+    const text = lines.join("\n");
+
+    await client.request("nvim_paste", [text, true, -1]);
+    await waitForFlush();
+
+    // Check the buffer has all 50 lines via Neovim API
+    const bufLines = await client.request("nvim_buf_get_lines", [0, 0, -1, false]) as string[];
+    expect(bufLines.length).toBe(50);
+    expect(bufLines[0]).toBe("Line 1: some content here");
+    expect(bufLines[49]).toBe("Line 50: some content here");
+
+    // Scroll to top and verify screen shows first line
+    await client.input("<Esc>gg");
+    await waitForFlush();
+
+    expect(rowText(screen, 0)).toBe("Line 1: some content here");
+  });
 });

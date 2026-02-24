@@ -19,7 +19,7 @@ export function NeovimEditor({ width, height, config = {} }: NeovimEditorProps) 
   const chromeRows = showChrome ? 1 : 0;
   const nvimRows = height - chromeRows;
 
-  const { screen, sendInput, resize, frameCount } = useNeovim(
+  const { screen, sendInput, paste, resize, frameCount } = useNeovim(
     width,
     nvimRows,
     config,
@@ -41,6 +41,7 @@ export function NeovimEditor({ width, height, config = {} }: NeovimEditorProps) 
         <NeovimScreen
           screen={screen}
           sendInput={sendInput}
+          paste={paste}
           frameCount={frameCount}
         />
       </Box>
