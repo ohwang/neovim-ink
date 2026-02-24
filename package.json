@@ -1,7 +1,7 @@
 {
   "name": "neovim-ink",
-  "version": "1.0.0",
-  "description": "A Neovim frontend built with Ink (React for the terminal)",
+  "version": "0.1.0",
+  "description": "Embeddable Neovim editor component for Ink (React for the terminal)",
   "type": "module",
   "main": "dist/lib.js",
   "types": "dist/lib.d.ts",
@@ -14,21 +14,34 @@
   "bin": {
     "neovim-ink": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "tsx src/index.tsx",
     "dev": "tsx watch src/index.tsx",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "neovim",
+    "nvim",
     "ink",
+    "react",
     "tui",
-    "terminal"
+    "terminal",
+    "editor",
+    "embeddable"
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
   "dependencies": {
     "ink": "^6.8.0",
     "neovim": "^5.4.0",
