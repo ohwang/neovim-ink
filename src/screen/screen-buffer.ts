@@ -147,6 +147,7 @@ export class ScreenBuffer {
     if (rgbAttr.italic) attr.italic = true;
     if (rgbAttr.bold) attr.bold = true;
     if (rgbAttr.strikethrough) attr.strikethrough = true;
+    if (rgbAttr.dim) attr.dim = true;
     if (rgbAttr.underline) attr.underline = true;
     if (rgbAttr.undercurl) attr.undercurl = true;
     if (rgbAttr.underdouble) attr.underdouble = true;

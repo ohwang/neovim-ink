@@ -13,6 +13,7 @@ export interface HlAttr {
   italic?: boolean;
   bold?: boolean;
   strikethrough?: boolean;
+  dim?: boolean;
   underline?: boolean;
   undercurl?: boolean;
   underdouble?: boolean;

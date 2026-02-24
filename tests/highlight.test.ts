@@ -94,6 +94,23 @@ describe("renderRow", () => {
     expect(result).toContain("\x1b[1m");
   });
 
+  it("includes dim/faint escape sequence", () => {
+    const cells = makeCells("D", 10);
+    const hlAttrs = new Map<number, HlAttr>([[10, { dim: true }]]);
+    const result = renderRow(cells, hlAttrs, defaults);
+    expect(result).toContain("\x1b[2m");
+    expect(stripAnsi(result)).toBe("D");
+  });
+
+  it("combines dim with other attributes", () => {
+    const cells = makeCells("X", 11);
+    const hlAttrs = new Map<number, HlAttr>([[11, { dim: true, italic: true, foreground: 0x888888 }]]);
+    const result = renderRow(cells, hlAttrs, defaults);
+    expect(result).toContain("\x1b[2m"); // dim
+    expect(result).toContain("\x1b[3m"); // italic
+    expect(result).toContain(fg(0x88, 0x88, 0x88));
+  });
+
   it("includes italic escape sequence", () => {
     const cells = makeCells("I", 5);
     const hlAttrs = new Map<number, HlAttr>([[5, { italic: true }]]);
@@ -172,7 +189,7 @@ describe("renderRowWithCursor", () => {
     expect(stripAnsi(result)).toBe("abc");
   });
 
-  it("renders vertical cursor with underline", () => {
+  it("renders vertical cursor with left-eighth-block bar", () => {
     const cells = makeCells("abc");
     const result = renderRowWithCursor(
       cells,
@@ -181,8 +198,13 @@ describe("renderRowWithCursor", () => {
       1,
       "vertical",
     );
-    expect(result).toContain("\x1b[4m");
-    expect(stripAnsi(result)).toBe("abc");
+    // Vertical cursor replaces the cell char with ▏ (left-eighth-block)
+    expect(stripAnsi(result)).toBe("a\u258fc");
+    // Should use cell fg for the bar color, cell bg for background
+    expect(result).toContain(fg(255, 255, 255)); // default fg
+    expect(result).toContain(bg(0, 0, 0));       // default bg
+    // Should NOT use underline anymore
+    expect(result).not.toContain("\x1b[4m");
   });
 
   it("renders block cursor with custom highlight colors inverted", () => {
@@ -268,14 +290,27 @@ describe("renderRowWithCursor", () => {
     expect(result).toContain("\x1b[4m"); // underline still present
   });
 
-  it("vertical cursor uses cursorAttr colors when provided", () => {
+  it("vertical cursor at first column renders bar", () => {
+    const cells = makeCells("xyz");
+    const result = renderRowWithCursor(cells, hlAttrs, defaults, 0, "vertical");
+    expect(stripAnsi(result)).toBe("\u258fyz");
+  });
+
+  it("vertical cursor at last column renders bar", () => {
+    const cells = makeCells("xyz");
+    const result = renderRowWithCursor(cells, hlAttrs, defaults, 2, "vertical");
+    expect(stripAnsi(result)).toBe("xy\u258f");
+  });
+
+  it("vertical cursor uses cursorAttr fg for bar color", () => {
     const cells = makeCells("abc");
     const cursorAttr: HlAttr = { foreground: 0x336699 };
     const result = renderRowWithCursor(
       cells, hlAttrs, defaults, 1, "vertical", cursorAttr,
     );
+    // cursorAttr fg should be used for the bar character color
     expect(result).toContain(fg(0x33, 0x66, 0x99));
-    expect(result).toContain("\x1b[4m"); // underline still present
+    expect(stripAnsi(result)).toBe("a\u258fc");
   });
 
   it("cursorAttr=undefined falls back to default inversion", () => {

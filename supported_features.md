@@ -109,14 +109,14 @@ Toggle legend: `[x]` = verified working, `[ ]` = not implemented, `[~]` = partia
 
 ### Not Rendered
 - [ ] Blend / transparency (parsed but unused)
-- [ ] Dim / faint
+- [x] Dim / faint
 - [ ] Blink
 - [ ] Overline
 
 ### Cursor
 - [x] Block cursor (inverts fg/bg)
 - [x] Horizontal cursor (underline)
-- [~] Vertical cursor (approximated as underline — no sub-cell rendering)
+- [x] Vertical cursor (left-eighth-block `▏` bar character)
 - [ ] Cursor blinking (via ANSI, not timer)
 - [x] Cursor `attr_id` highlight (mode-specific cursor color)
 - [ ] Cursor `cell_percentage` (partial-height cursor)

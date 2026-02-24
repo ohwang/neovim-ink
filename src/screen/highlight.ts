@@ -23,7 +23,11 @@ const UNDERCURL = "\x1b[4:3m";
 const UNDERDOUBLE = "\x1b[4:2m";
 const UNDERDOTTED = "\x1b[4:4m";
 const UNDERDASHED = "\x1b[4:5m";
+const DIM = "\x1b[2m";
 const STRIKETHROUGH = "\x1b[9m";
+// Left one-eighth block — a thin vertical bar on the left edge of a cell.
+// Used to simulate the beam/bar cursor in insert mode.
+const LEFT_EIGHTH_BLOCK = "\u258f";
 
 function buildAttrSequence(
   hlAttr: HlAttr | undefined,
@@ -39,6 +43,7 @@ function buildAttrSequence(
   let seq = fgSequence(fg) + bgSequence(bg);
 
   if (hlAttr?.bold) seq += BOLD;
+  if (hlAttr?.dim) seq += DIM;
   if (hlAttr?.italic) seq += ITALIC;
   if (hlAttr?.undercurl) seq += UNDERCURL;
   else if (hlAttr?.underdouble) seq += UNDERDOUBLE;
@@ -146,10 +151,13 @@ export function renderRowWithCursor(
         }
         case "vertical":
         default: {
-          const cFg = hasCursorFg ? cursorAttr!.foreground! : cellFg;
-          const cBg = hasCursorBg ? cursorAttr!.background! : cellBg;
-          result += fgSequence(cFg) + bgSequence(cBg) + UNDERLINE;
-          result += cell.text || " ";
+          // Render a thin vertical bar on the left edge of the cell using
+          // the left-eighth-block character. The bar fg is the cursor color
+          // (or the cell's fg), and the cell bg is preserved so the bar
+          // appears as a thin line over the cell background.
+          const barFg = hasCursorFg ? cursorAttr!.foreground! : cellFg;
+          result += fgSequence(barFg) + bgSequence(cellBg);
+          result += LEFT_EIGHTH_BLOCK;
           break;
         }
       }
