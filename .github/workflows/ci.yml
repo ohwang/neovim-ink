@@ -50,11 +50,26 @@ jobs:
 
       - run: npm ci --ignore-scripts
       - run: npm run build
+
+      - name: Check if version already published
+        id: check
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          PKG_NAME=$(node -p "require('./package.json').name")
+          if npm view "${PKG_NAME}@${PKG_VERSION}" version 2>/dev/null; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+            echo "${PKG_NAME}@${PKG_VERSION} is already published, skipping"
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - run: npm publish --provenance --access public --ignore-scripts
+        if: steps.check.outputs.already_published != 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
+        if: steps.check.outputs.already_published != 'true'
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
