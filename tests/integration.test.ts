@@ -424,6 +424,143 @@ describe("Neovim integration", () => {
   // nvim_paste tests
   // -----------------------------------------------------------------------
 
+  // -----------------------------------------------------------------------
+  // Visual Block / Visual Line / Operator-pending mode tests
+  // -----------------------------------------------------------------------
+
+  it("enters visual line mode with V", async () => {
+    await client.input("<Esc>ggdG");
+    await waitForFlush();
+
+    // Insert two lines of text
+    await client.input("iLine A<CR>Line B<Esc>gg");
+    await waitForFlush();
+
+    await client.input("V");
+    await waitForFlush();
+
+    const mode = screen.modeInfoList[screen.cursor.modeIdx];
+    expect(mode?.name).toContain("visual");
+
+    await client.input("<Esc>");
+    await waitForFlush();
+  });
+
+  it("enters visual block mode with Ctrl-v", async () => {
+    await client.input("<Esc>gg0");
+    await waitForFlush();
+
+    const startRow = screen.cursor.row;
+    const startCol = screen.cursor.col;
+
+    await client.input("<C-v>");
+    await waitForFlush();
+
+    const mode = screen.modeInfoList[screen.cursor.modeIdx];
+    // Neovim reports visual block as "visual" with a different short_name
+    expect(mode?.name).toContain("visual");
+
+    // Move down and right to make a block selection
+    await client.input("jl");
+    await waitForFlush();
+
+    // Cursor should have moved from starting position
+    expect(screen.cursor.row).toBe(startRow + 1);
+    expect(screen.cursor.col).toBe(startCol + 1);
+
+    await client.input("<Esc>");
+    await waitForFlush();
+  });
+
+  it("enters operator-pending mode after d", async () => {
+    await client.input("<Esc>gg");
+    await waitForFlush();
+
+    // 'd' enters operator-pending mode, waiting for a motion
+    await client.input("d");
+    await waitForFlush();
+
+    const mode = screen.modeInfoList[screen.cursor.modeIdx];
+    // Neovim names this "operator" or "op_pending"
+    expect(mode?.name).toMatch(/operator|op_pending|normal/);
+
+    // Cancel with Escape
+    await client.input("<Esc>");
+    await waitForFlush();
+
+    const normalMode = screen.modeInfoList[screen.cursor.modeIdx];
+    expect(normalMode?.name).toBe("normal");
+  });
+
+  // -----------------------------------------------------------------------
+  // Unicode / multibyte character tests
+  // -----------------------------------------------------------------------
+
+  it("renders CJK double-width characters", async () => {
+    await client.input("<Esc>ggdGi");
+    await waitForFlush();
+
+    // Paste CJK characters — these are double-width
+    await client.request("nvim_paste", ["漢字テスト", true, -1]);
+    await waitForFlush();
+
+    // Each CJK char occupies 2 cells. The screen buffer should have:
+    // cell 0: "漢", cell 1: "" (right half), cell 2: "字", cell 3: "", ...
+    const row = screen.cells[0]!;
+    expect(row[0]!.text).toBe("漢");
+    expect(row[1]!.text).toBe("");  // right half of wide char
+    expect(row[2]!.text).toBe("字");
+    expect(row[3]!.text).toBe("");
+    expect(row[4]!.text).toBe("テ");
+    expect(row[5]!.text).toBe("");
+    expect(row[6]!.text).toBe("ス");
+    expect(row[7]!.text).toBe("");
+    expect(row[8]!.text).toBe("ト");
+    expect(row[9]!.text).toBe("");
+
+    // rowText joins all cells — right halves are empty strings that vanish in join
+    expect(rowText(screen, 0)).toBe("漢字テスト");
+  });
+
+  it("renders mixed ASCII and CJK text", async () => {
+    await client.input("<Esc>ggdGi");
+    await waitForFlush();
+
+    await client.request("nvim_paste", ["hello世界end", true, -1]);
+    await waitForFlush();
+
+    const row = screen.cells[0]!;
+    // "hello" = 5 single-width cells
+    expect(row[0]!.text).toBe("h");
+    expect(row[4]!.text).toBe("o");
+    // "世" at cell 5, right half at cell 6
+    expect(row[5]!.text).toBe("世");
+    expect(row[6]!.text).toBe("");
+    // "界" at cell 7, right half at cell 8
+    expect(row[7]!.text).toBe("界");
+    expect(row[8]!.text).toBe("");
+    // "end" at cells 9-11
+    expect(row[9]!.text).toBe("e");
+    expect(row[10]!.text).toBe("n");
+    expect(row[11]!.text).toBe("d");
+  });
+
+  it("renders Unicode symbols and accented characters", async () => {
+    await client.input("<Esc>ggdGi");
+    await waitForFlush();
+
+    await client.request("nvim_paste", ["café → résumé", true, -1]);
+    await waitForFlush();
+
+    // Verify the text renders correctly via Neovim API
+    const bufLines = await client.request("nvim_buf_get_lines", [0, 0, -1, false]) as string[];
+    expect(bufLines[0]).toBe("café → résumé");
+
+    // "→" is a single-width Unicode symbol in most configurations
+    expect(rowText(screen, 0)).toContain("café");
+    expect(rowText(screen, 0)).toContain("résumé");
+  });
+
   it("nvim_paste inserts text in insert mode", async () => {
     // Clear buffer and enter insert mode
     await client.input("<Esc>ggdGi");

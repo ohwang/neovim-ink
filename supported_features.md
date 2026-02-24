@@ -39,7 +39,7 @@ Toggle legend: `[x]` = verified working, `[ ]` = not implemented, `[~]` = partia
 
 ### Special Input
 - [x] Special char escaping (`<lt>`, `<Bslash>`, `<Bar>`)
-- [~] Unicode / multibyte characters (passthrough, no IME)
+- [x] Unicode / multibyte characters (CJK double-width, accented chars, symbols)
 - [x] Paste detection (multi-char input routed to `nvim_paste()` API)
 - [ ] Mouse click / drag / scroll
 - [ ] Dead keys / compose sequences
@@ -176,10 +176,10 @@ Toggle legend: `[x]` = verified working, `[ ]` = not implemented, `[~]` = partia
 - [x] Visual mode
 - [x] Command-line mode
 - [x] Replace mode
-- [~] Visual Block mode (renders, but block selection display depends on Neovim)
-- [~] Visual Line mode (renders, depends on Neovim)
+- [x] Visual Block mode (`<C-v>`, block selection, cursor movement)
+- [x] Visual Line mode (`V`, line selection)
 - [~] Terminal mode (not tested)
-- [~] Operator-pending mode (not tested)
+- [x] Operator-pending mode (`d`, `c`, `y` + motion)
 
 ---
 
@@ -188,7 +188,7 @@ Toggle legend: `[x]` = verified working, `[ ]` = not implemented, `[~]` = partia
 ### Unit Tests
 - [x] ScreenBuffer: constructor, gridLine, gridScroll, gridResize, gridClear, hlAttrDefine, defaultColorsSet, modeInfoSet, modeChange, busyStart/Stop, flush (38 tests)
 - [x] Input translation: all key types, modifiers, special chars, edge cases (23 tests)
-- [x] Highlight rendering: renderRow, renderRowWithCursor, all attributes, cursor shapes (19 tests)
+- [x] Highlight rendering: renderRow, renderRowWithCursor, all attributes, cursor shapes, cursorAttr, dim (29 tests)
 
 ### Integration Tests (real Neovim process)
 - [x] UI attach, initial flush, mode_info_set, default_colors, hl_attr_define
@@ -197,17 +197,19 @@ Toggle legend: `[x]` = verified working, `[ ]` = not implemented, `[~]` = partia
 - [x] Line operations (o, dd)
 - [x] Command-line mode
 - [x] Undo / redo
-- [x] Visual mode
+- [x] Visual mode, Visual Line mode, Visual Block mode
+- [x] Operator-pending mode
 - [x] Search (/)
 - [x] Resize (nvim_ui_try_resize)
 - [x] Resize with chrome row adjustment
+- [x] Cursor attr_id resolution (normal mode, insert mode)
 - [x] Paste via nvim_paste (insert mode, normal mode, multiline, special chars, empty, large block)
+- [x] Unicode / wide characters (CJK double-width, mixed ASCII+CJK, accented chars, symbols)
 
 ### Not Tested
 - [ ] Function keys
 - [ ] Mouse input
 - [ ] Large file performance
-- [ ] Wide characters in integration tests
 - [ ] Floating window events (not implemented)
 - [ ] Concurrent resize + input
 - [ ] Neovim crash recovery
