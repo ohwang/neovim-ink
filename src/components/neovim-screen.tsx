@@ -4,11 +4,13 @@ import { GridRow } from "./grid-row.js";
 import { useRawInput } from "../hooks/use-raw-input.js";
 import type { ScreenBuffer } from "../screen/screen-buffer.js";
 import type { ModeInfo } from "../screen/types.js";
+import type { MouseEvent } from "../neovim/mouse.js";
 
 interface Props {
   screen: ScreenBuffer;
   sendInput: (keys: string) => void;
   paste: (text: string) => void;
+  onMouse: (event: MouseEvent) => void;
   frameCount: number;
 }
 
@@ -16,9 +18,10 @@ export function NeovimScreen({
   screen,
   sendInput,
   paste,
+  onMouse,
   frameCount,
 }: Props) {
-  useRawInput(sendInput, paste, true);
+  useRawInput(sendInput, paste, onMouse, true);
 
   // Determine current cursor shape and attr from mode info
   const modeInfo: ModeInfo | undefined =

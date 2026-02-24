@@ -12,6 +12,7 @@ export interface UseNeovimResult {
   client: NeovimClient | null;
   sendInput: (keys: string) => void;
   paste: (text: string) => void;
+  sendMouse: (button: string, action: string, modifier: string, grid: number, row: number, col: number) => void;
   resize: (w: number, h: number) => void;
   frameCount: number;
 }
@@ -58,6 +59,13 @@ export function useNeovim(
         {},
       ]);
 
+      // Enable mouse support in all modes
+      await client.request("nvim_set_option_value", [
+        "mouse",
+        "a",
+        {},
+      ]);
+
       // Attach UI with ext_linegrid for modern grid protocol
       await client.request("nvim_ui_attach", [
         width,
@@ -99,6 +107,15 @@ export function useNeovim(
       });
   }, []);
 
+  const sendMouse = useCallback((button: string, action: string, modifier: string, grid: number, row: number, col: number) => {
+    log("mouse", `sendMouse button=${button} action=${action} mod=${modifier} grid=${grid} row=${row} col=${col}`);
+    clientRef.current
+      ?.request("nvim_input_mouse", [button, action, modifier, grid, row, col])
+      .catch((err: unknown) => {
+        log("mouse", `nvim_input_mouse failed: ${err}`);
+      });
+  }, []);
+
   const resize = useCallback((w: number, h: number) => {
     log("resize", `useNeovim.resize(${w}, ${h})`);
     // Only tell Neovim the new size. Neovim will send a grid_resize event
@@ -115,6 +132,7 @@ export function useNeovim(
     client: clientRef.current,
     sendInput,
     paste,
+    sendMouse,
     resize,
     frameCount,
   };

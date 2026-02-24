@@ -230,6 +230,8 @@ log("init", `args: file=${file ?? "(none)"} size=${size ? `${size.width}x${size.
 process.stdout.write("\x1b[?1049h");
 // Hide cursor initially
 process.stdout.write("\x1b[?25l");
+// Enable SGR mouse mode (button events + SGR extended coordinates)
+process.stdout.write("\x1b[?1000h\x1b[?1006h");
 
 const instance = render(<CliApp config={config} />, {
   exitOnCtrlC: false, // Let Neovim handle Ctrl+C
@@ -241,6 +243,8 @@ const instance = render(<CliApp config={config} />, {
 instance.waitUntilExit().then(() => {
   log("init", "exiting");
   closeLogger();
+  // Disable SGR mouse mode
+  process.stdout.write("\x1b[?1006l\x1b[?1000l");
   // Show cursor again
   process.stdout.write("\x1b[?25h");
   // Leave alternate screen buffer

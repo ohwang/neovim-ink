@@ -9,3 +9,7 @@ export { DEFAULT_CONFIG } from "./config.js";
 // Screen types for advanced consumers
 export { ScreenBuffer } from "./screen/screen-buffer.js";
 export type { Cell, HlAttr, DefaultColors, ModeInfo, CursorState } from "./screen/types.js";
+
+// Mouse event types
+export { parseMouseEvent, isMouseSequence } from "./neovim/mouse.js";
+export type { MouseEvent } from "./neovim/mouse.js";

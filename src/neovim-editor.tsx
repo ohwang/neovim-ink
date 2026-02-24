@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Box, Text } from "ink";
 import { useNeovim } from "./hooks/use-neovim.js";
 import { NeovimScreen } from "./components/neovim-screen.js";
 import { DEFAULT_CONFIG, type NeovimInkConfig } from "./config.js";
+import type { MouseEvent } from "./neovim/mouse.js";
 
 export interface NeovimEditorProps {
   /** Width of the editor in columns. */
@@ -19,11 +20,25 @@ export function NeovimEditor({ width, height, config = {} }: NeovimEditorProps) 
   const chromeRows = showChrome ? 1 : 0;
   const nvimRows = height - chromeRows;
 
-  const { screen, sendInput, paste, resize, frameCount } = useNeovim(
+  const { screen, sendInput, paste, sendMouse, resize, frameCount } = useNeovim(
     width,
     nvimRows,
     config,
   );
+
+  // Translate parsed mouse events into Neovim's nvim_input_mouse calls.
+  // Map scroll events to Neovim's "wheel" button + "up"/"down" action.
+  const handleMouse = useCallback((event: MouseEvent) => {
+    const { button, action, modifier, col, row } = event;
+
+    if (action === "scroll_up") {
+      sendMouse("wheel", "up", modifier, 0, row, col);
+    } else if (action === "scroll_down") {
+      sendMouse("wheel", "down", modifier, 0, row, col);
+    } else {
+      sendMouse(button, action, modifier, 0, row, col);
+    }
+  }, [sendMouse]);
 
   // Resize Neovim when the width/height props change after initial mount.
   const prevDims = useRef({ width, nvimRows });
@@ -42,6 +57,7 @@ export function NeovimEditor({ width, height, config = {} }: NeovimEditorProps) 
           screen={screen}
           sendInput={sendInput}
           paste={paste}
+          onMouse={handleMouse}
           frameCount={frameCount}
         />
       </Box>

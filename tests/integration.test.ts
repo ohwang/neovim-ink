@@ -37,6 +37,13 @@ describe("Neovim integration", () => {
       {},
     ]);
 
+    // Enable mouse support in all modes
+    await client.request("nvim_set_option_value", [
+      "mouse",
+      "a",
+      {},
+    ]);
+
     screen = new ScreenBuffer(80, 24);
     flushCount = 0;
 
@@ -652,5 +659,106 @@ describe("Neovim integration", () => {
     await waitForFlush();
 
     expect(rowText(screen, 0)).toBe("Line 1: some content here");
+  });
+
+  // -----------------------------------------------------------------------
+  // Mouse input tests (via nvim_input_mouse)
+  // -----------------------------------------------------------------------
+
+  it("mouse left click moves cursor to clicked position", async () => {
+    // Set up a line of text
+    await client.input("<Esc>ggdGi");
+    await waitForFlush();
+    await client.request("nvim_paste", ["Hello mouse world!", true, -1]);
+    await client.input("<Esc>0");
+    await waitForFlush();
+
+    expect(screen.cursor.col).toBe(0);
+
+    // Click at column 6, row 0 (on the 'm' of 'mouse')
+    await client.request("nvim_input_mouse", ["left", "press", "", 0, 0, 6]);
+    await client.request("nvim_input_mouse", ["left", "release", "", 0, 0, 6]);
+    await waitForFlush();
+
+    expect(screen.cursor.row).toBe(0);
+    expect(screen.cursor.col).toBe(6);
+  });
+
+  it("mouse left click on different row moves cursor", async () => {
+    await client.input("<Esc>ggdGi");
+    await waitForFlush();
+    await client.request("nvim_paste", ["Line one\nLine two\nLine three", true, -1]);
+    await client.input("<Esc>gg0");
+    await waitForFlush();
+
+    expect(screen.cursor.row).toBe(0);
+
+    // Click on row 2, col 5 (on "three")
+    await client.request("nvim_input_mouse", ["left", "press", "", 0, 2, 5]);
+    await client.request("nvim_input_mouse", ["left", "release", "", 0, 2, 5]);
+    await waitForFlush();
+
+    expect(screen.cursor.row).toBe(2);
+    expect(screen.cursor.col).toBe(5);
+  });
+
+  it("mouse scroll down moves viewport", async () => {
+    // Fill buffer with many lines
+    await client.input("<Esc>ggdGi");
+    await waitForFlush();
+    const lines = Array.from({ length: 50 }, (_, i) => `Scroll line ${i + 1}`);
+    await client.request("nvim_paste", [lines.join("\n"), true, -1]);
+    await client.input("<Esc>gg");
+    await waitForFlush();
+
+    expect(rowText(screen, 0)).toContain("Scroll line 1");
+
+    // Scroll down several times (each wheel event scrolls ~3 lines by default)
+    for (let i = 0; i < 5; i++) {
+      await client.request("nvim_input_mouse", ["wheel", "down", "", 0, 10, 10]);
+    }
+    await waitForFlush();
+
+    // Row 0 should no longer show "Scroll line 1" — viewport has scrolled.
+    // Use exact match to avoid substring false positives (e.g. "Scroll line 16").
+    const topLine = rowText(screen, 0);
+    expect(topLine).not.toBe("Scroll line 1");
+    expect(topLine).toContain("Scroll line"); // Still a scroll line, just not #1
+  });
+
+  it("mouse scroll up moves viewport back", async () => {
+    // Continue from previous test state (scrolled down in 50-line buffer)
+    // Scroll up many times to get back to top
+    for (let i = 0; i < 10; i++) {
+      await client.request("nvim_input_mouse", ["wheel", "up", "", 0, 10, 10]);
+    }
+    await waitForFlush();
+
+    // Should be back at or near the top
+    expect(rowText(screen, 0)).toContain("Scroll line 1");
+  });
+
+  it("mouse drag selects text in visual mode", async () => {
+    await client.input("<Esc>ggdGi");
+    await waitForFlush();
+    await client.request("nvim_paste", ["Select this text", true, -1]);
+    await client.input("<Esc>0");
+    await waitForFlush();
+
+    // Press at col 0, drag to col 5 — should select "Select"
+    await client.request("nvim_input_mouse", ["left", "press", "", 0, 0, 0]);
+    await waitForFlush();
+    await client.request("nvim_input_mouse", ["left", "drag", "", 0, 0, 5]);
+    await waitForFlush();
+
+    const mode = screen.modeInfoList[screen.cursor.modeIdx];
+    expect(mode?.name).toContain("visual");
+
+    // Release
+    await client.request("nvim_input_mouse", ["left", "release", "", 0, 0, 5]);
+    await waitForFlush();
+
+    await client.input("<Esc>");
+    await waitForFlush();
   });
 });

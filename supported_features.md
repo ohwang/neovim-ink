@@ -41,7 +41,7 @@ Toggle legend: `[x]` = verified working, `[ ]` = not implemented, `[~]` = partia
 - [x] Special char escaping (`<lt>`, `<Bslash>`, `<Bar>`)
 - [x] Unicode / multibyte characters (CJK double-width, accented chars, symbols)
 - [x] Paste detection (multi-char input routed to `nvim_paste()` API)
-- [ ] Mouse click / drag / scroll
+- [x] Mouse click / drag / scroll (SGR mode, left/middle/right, wheel, modifiers)
 - [ ] Dead keys / compose sequences
 - [ ] IME (Input Method Editor)
 
@@ -189,6 +189,7 @@ Toggle legend: `[x]` = verified working, `[ ]` = not implemented, `[~]` = partia
 - [x] ScreenBuffer: constructor, gridLine, gridScroll, gridResize, gridClear, hlAttrDefine, defaultColorsSet, modeInfoSet, modeChange, busyStart/Stop, flush (38 tests)
 - [x] Input translation: all key types, modifiers, special chars, edge cases (23 tests)
 - [x] Highlight rendering: renderRow, renderRowWithCursor, all attributes, cursor shapes, cursorAttr, dim (29 tests)
+- [x] Mouse parsing: SGR sequences, all buttons, scroll, drag, release, modifiers, edge cases (21 tests)
 
 ### Integration Tests (real Neovim process)
 - [x] UI attach, initial flush, mode_info_set, default_colors, hl_attr_define
@@ -205,10 +206,12 @@ Toggle legend: `[x]` = verified working, `[ ]` = not implemented, `[~]` = partia
 - [x] Cursor attr_id resolution (normal mode, insert mode)
 - [x] Paste via nvim_paste (insert mode, normal mode, multiline, special chars, empty, large block)
 - [x] Unicode / wide characters (CJK double-width, mixed ASCII+CJK, accented chars, symbols)
+- [x] Mouse click (left click cursor positioning, cross-row click)
+- [x] Mouse scroll (wheel down viewport shift, wheel up return to top)
+- [x] Mouse drag (visual mode selection)
 
 ### Not Tested
 - [ ] Function keys
-- [ ] Mouse input
 - [ ] Large file performance
 - [ ] Floating window events (not implemented)
 - [ ] Concurrent resize + input
