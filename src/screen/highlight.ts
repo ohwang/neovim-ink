@@ -92,9 +92,12 @@ export function renderRow(
 /**
  * Render a row with cursor overlay.
  *
- * - block: invert fg/bg at cursor position
+ * - block: invert fg/bg at cursor position (or use cursorAttr colors if provided)
  * - vertical: render a left-edge bar using Unicode left-half-block + underline
  * - horizontal: render an underline at cursor position
+ *
+ * When `cursorAttr` is provided (from mode_info_set attr_id), its colors
+ * override the default cursor inversion behaviour.
  */
 export function renderRowWithCursor(
   cells: Cell[],
@@ -102,6 +105,7 @@ export function renderRowWithCursor(
   defaultColors: DefaultColors,
   cursorCol: number,
   cursorShape: "block" | "horizontal" | "vertical" | undefined,
+  cursorAttr?: HlAttr,
 ): string {
   let result = "";
   let prevHlId = -1;
@@ -113,33 +117,41 @@ export function renderRowWithCursor(
       // Render cursor cell with special styling
       result += RESET;
       const hlAttr = hlAttrs.get(cell.hlId);
-      let fg = hlAttr?.foreground ?? defaultColors.fg;
-      let bg = hlAttr?.background ?? defaultColors.bg;
+      let cellFg = hlAttr?.foreground ?? defaultColors.fg;
+      let cellBg = hlAttr?.background ?? defaultColors.bg;
       if (hlAttr?.reverse) {
-        [fg, bg] = [bg, fg];
+        [cellFg, cellBg] = [cellBg, cellFg];
       }
 
+      // If cursorAttr has explicit colors, use them instead of inversion.
+      const hasCursorFg = cursorAttr?.foreground !== undefined;
+      const hasCursorBg = cursorAttr?.background !== undefined;
+
       switch (cursorShape) {
-        case "block":
-          // Invert fg/bg for block cursor
-          result += fgSequence(bg) + bgSequence(fg);
+        case "block": {
+          // With cursor attr: use its fg/bg directly (falling back to
+          // inverted cell colors for any unset component).
+          const cFg = hasCursorFg ? cursorAttr!.foreground! : cellBg;
+          const cBg = hasCursorBg ? cursorAttr!.background! : cellFg;
+          result += fgSequence(cFg) + bgSequence(cBg);
           result += cell.text || " ";
           break;
-        case "horizontal":
-          // Underline the cell
-          result += fgSequence(fg) + bgSequence(bg) + UNDERLINE;
+        }
+        case "horizontal": {
+          const cFg = hasCursorFg ? cursorAttr!.foreground! : cellFg;
+          const cBg = hasCursorBg ? cursorAttr!.background! : cellBg;
+          result += fgSequence(cFg) + bgSequence(cBg) + UNDERLINE;
           result += cell.text || " ";
           break;
+        }
         case "vertical":
-        default:
-          // Use a combining vertical bar approach: render the char with
-          // a bright fg underline to hint at the beam cursor position.
-          // The best terminal-portable approach: just use reverse on a
-          // thin bar character, but since we can't do sub-cell, underline
-          // the cell to indicate cursor position in insert mode.
-          result += fgSequence(fg) + bgSequence(bg) + UNDERLINE;
+        default: {
+          const cFg = hasCursorFg ? cursorAttr!.foreground! : cellFg;
+          const cBg = hasCursorBg ? cursorAttr!.background! : cellBg;
+          result += fgSequence(cFg) + bgSequence(cBg) + UNDERLINE;
           result += cell.text || " ";
           break;
+        }
       }
 
       prevHlId = -1; // Force re-emit on next cell

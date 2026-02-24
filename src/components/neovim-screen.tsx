@@ -20,10 +20,14 @@ export function NeovimScreen({
 }: Props) {
   useRawInput(sendInput, paste, true);
 
-  // Determine current cursor shape from mode info
+  // Determine current cursor shape and attr from mode info
   const modeInfo: ModeInfo | undefined =
     screen.modeInfoList[screen.cursor.modeIdx];
   const cursorShape = modeInfo?.cursor_shape ?? "block";
+  const cursorAttr =
+    modeInfo?.attr_id != null && modeInfo.attr_id > 0
+      ? screen.hlAttrs.get(modeInfo.attr_id)
+      : undefined;
 
   // Use screen.generation (updated on each flush) to bust memoization.
   // The ScreenBuffer mutates cell arrays in-place, so React's reference
@@ -48,6 +52,7 @@ export function NeovimScreen({
               : -1
           }
           cursorShape={cursorShape}
+          cursorAttr={cursorAttr}
           generation={generation}
         />
       ))}

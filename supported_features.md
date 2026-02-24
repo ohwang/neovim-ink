@@ -118,7 +118,7 @@ Toggle legend: `[x]` = verified working, `[ ]` = not implemented, `[~]` = partia
 - [x] Horizontal cursor (underline)
 - [~] Vertical cursor (approximated as underline — no sub-cell rendering)
 - [ ] Cursor blinking (via ANSI, not timer)
-- [ ] Cursor `attr_id` highlight (mode-specific cursor color)
+- [x] Cursor `attr_id` highlight (mode-specific cursor color)
 - [ ] Cursor `cell_percentage` (partial-height cursor)
 
 ### Wide Characters

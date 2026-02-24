@@ -223,4 +223,68 @@ describe("renderRowWithCursor", () => {
     expect(result).toContain(fg(0xaa, 0, 0));
     expect(result).toContain(bg(0, 0xaa, 0));
   });
+
+  it("block cursor uses cursorAttr fg/bg when provided", () => {
+    const cells = makeCells("abc");
+    const cursorAttr: HlAttr = { foreground: 0x111111, background: 0x222222 };
+    const result = renderRowWithCursor(
+      cells, hlAttrs, defaults, 1, "block", cursorAttr,
+    );
+    // cursorAttr provides explicit colors — should use them directly
+    expect(result).toContain(fg(0x11, 0x11, 0x11));
+    expect(result).toContain(bg(0x22, 0x22, 0x22));
+    expect(stripAnsi(result)).toBe("abc");
+  });
+
+  it("block cursor uses cursorAttr bg only, falls back to cell bg for fg", () => {
+    const cells = makeCells("abc");
+    // Only background set — fg should fall back to inverted cell bg (0x000000)
+    const cursorAttr: HlAttr = { background: 0x00ff00 };
+    const result = renderRowWithCursor(
+      cells, hlAttrs, defaults, 1, "block", cursorAttr,
+    );
+    expect(result).toContain(bg(0, 255, 0)); // cursorAttr bg
+    expect(result).toContain(fg(0, 0, 0));   // cell bg as fallback fg
+  });
+
+  it("block cursor uses cursorAttr fg only, falls back to cell fg for bg", () => {
+    const cells = makeCells("abc");
+    const cursorAttr: HlAttr = { foreground: 0xff0000 };
+    const result = renderRowWithCursor(
+      cells, hlAttrs, defaults, 1, "block", cursorAttr,
+    );
+    expect(result).toContain(fg(255, 0, 0));   // cursorAttr fg
+    expect(result).toContain(bg(255, 255, 255)); // cell fg as fallback bg
+  });
+
+  it("horizontal cursor uses cursorAttr colors when provided", () => {
+    const cells = makeCells("abc");
+    const cursorAttr: HlAttr = { foreground: 0xaabbcc, background: 0x112233 };
+    const result = renderRowWithCursor(
+      cells, hlAttrs, defaults, 1, "horizontal", cursorAttr,
+    );
+    expect(result).toContain(fg(0xaa, 0xbb, 0xcc));
+    expect(result).toContain(bg(0x11, 0x22, 0x33));
+    expect(result).toContain("\x1b[4m"); // underline still present
+  });
+
+  it("vertical cursor uses cursorAttr colors when provided", () => {
+    const cells = makeCells("abc");
+    const cursorAttr: HlAttr = { foreground: 0x336699 };
+    const result = renderRowWithCursor(
+      cells, hlAttrs, defaults, 1, "vertical", cursorAttr,
+    );
+    expect(result).toContain(fg(0x33, 0x66, 0x99));
+    expect(result).toContain("\x1b[4m"); // underline still present
+  });
+
+  it("cursorAttr=undefined falls back to default inversion", () => {
+    const cells = makeCells("abc");
+    const result = renderRowWithCursor(
+      cells, hlAttrs, defaults, 1, "block", undefined,
+    );
+    // Same as no cursorAttr: inverts default fg/bg
+    expect(result).toContain(fg(0, 0, 0));       // default bg as cursor fg
+    expect(result).toContain(bg(255, 255, 255));  // default fg as cursor bg
+  });
 });
