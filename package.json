@@ -16,7 +16,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc",
@@ -24,7 +25,7 @@
     "dev": "tsx watch src/index.tsx",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm test && npm run build"
   },
   "keywords": [
     "neovim",
@@ -36,20 +37,31 @@
     "editor",
     "embeddable"
   ],
-  "author": "",
+  "author": "ohwang",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/ohwang/neovim-ink.git"
+  },
+  "homepage": "https://github.com/ohwang/neovim-ink#readme",
+  "bugs": {
+    "url": "https://github.com/ohwang/neovim-ink/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "ink": ">=5.0.0",
+    "react": ">=18.0.0"
   },
   "dependencies": {
-    "ink": "^6.8.0",
-    "neovim": "^5.4.0",
-    "react": "^19.2.4"
+    "neovim": "^5.4.0"
   },
   "devDependencies": {
     "@types/node": "^25.3.0",
     "@types/react": "^19.2.14",
+    "ink": "^6.8.0",
+    "react": "^19.2.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
